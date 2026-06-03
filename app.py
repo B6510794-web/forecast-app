@@ -3,13 +3,14 @@ import pandas as pd
 import numpy as np
 from PIL import Image
 
-# 1. ตั้งค่าหน้าเว็บ
+# 1. ตั้งค่าหน้าเว็บให้กว้างเต็มจอ
 try:
     icon_image = Image.open("logo.png")
     st.set_page_config(page_title="B6510794 Smart Forecast", page_icon=icon_image, layout="wide")
 except FileNotFoundError:
     st.set_page_config(page_title="B6510794 Smart Forecast", page_icon="🏭", layout="wide")
 
+# แสดงโลโก้จริงบนหน้าเว็บ
 try:
     logo_image = Image.open("logo.png")
     st.logo(logo_image)
@@ -18,6 +19,7 @@ except FileNotFoundError:
 
 st.title("🏭 ระบบพยากรณ์และวางแผนการผลิต (Smart Factory Dashboard)")
 
+# 2. จัดระเบียบ Sidebar
 with st.sidebar:
     st.header("⚙️ แผงควบคุม (Control Panel)")
     capacity_limit = st.number_input("กำลังการผลิตสูงสุด (Units/เดือน)", min_value=100, value=450, step=10)
@@ -25,49 +27,55 @@ with st.sidebar:
     st.markdown("---")
     st.caption("เครื่องมือสนับสนุนการตัดสินใจ: Aggregate Planning")
 
-# ข้อมูลสำรอง (กรณีผู้ใช้ยังไม่อัปโหลดไฟล์)
+# 🌟 3. ฐานข้อมูลเริ่มต้นดึงมาจากรูปแรกที่เคยส่งมา (ครบทั้ง 12 เดือน)
 default_data = {
-    'เดือน': ['ม.ค. 67', 'ก.พ. 67', 'มี.ค. 67', 'เม.ย. 67', 'พ.ค. 67', 'มิ.ย. 67'],
-    'ยอดขายจริง': [280, 310, 360, 295, 340, 490]
+    'เดือน': ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'],
+    'ยอดขายจริง': [280, 310, 360, 295, 340, 490, 410, 390, 440, 525, 515, 480]
 }
-df_initial = pd.DataFrame(default_data)
+df_current = pd.DataFrame(default_data)
 
 # ---------------------------------------------------------
-# 🌟 แท็บการทำงาน (ดึงข้อมูล -> คำนวณ -> แสดงผล)
+# 4. ส่วนแท็บการทำงาน
 # ---------------------------------------------------------
 tab1, tab2, tab3 = st.tabs(["📈 กราฟและตารางพยากรณ์", "📂 นำเข้าข้อมูล (Excel)", "💡 แผนรับมือ (Action Plan)"])
 
+# ⚠️ สั่งรันแท็บข้อมูลก่อนเพื่อให้หน้ากราฟนำค่าไปคำนวณได้ทันที
 with tab2:
     st.subheader("📥 นำเข้าข้อมูลยอดขายจาก Excel")
     
-    # 🌟 ฟีเจอร์อัปโหลดไฟล์ Excel
+    # ช่องอัปโหลดไฟล์ Excel
     uploaded_file = st.file_uploader("ลากไฟล์ Excel (.xlsx) มาวางที่นี่ หรือคลิกเพื่อค้นหา", type=['xlsx', 'xls'])
     
     if uploaded_file is not None:
-        # ถ้ามีการอัปโหลด ให้ใช้ข้อมูลจาก Excel
         try:
-            df_initial = pd.read_excel(uploaded_file)
-            st.success("✅ โหลดข้อมูลจาก Excel สำเร็จ!")
+            df_current = pd.read_excel(uploaded_file)
+            st.success("✅ โหลดข้อมูลจาก Excel ใหม่สำเร็จ!")
         except Exception as e:
             st.error(f"❌ เกิดข้อผิดพลาดในการอ่านไฟล์: {e}")
     else:
-        st.info("💡 ข้อแนะนำ: ไฟล์ Excel ควรมีหัวคอลัมน์ชื่อ 'เดือน' และ 'ยอดขายจริง'")
-        st.write("---")
-        st.write("ข้อมูลตัวอย่าง (แก้ไขเพิ่มลดข้อมูลด้านล่างนี้ได้โดยตรงหากไม่อัปโหลดไฟล์):")
-
-    # นำข้อมูลที่ได้ (จาก Excel หรือ Default) มาแสดงให้แก้ได้อีกรอบ
+        st.info("💡 ปัจจุบันระบบกำลังใช้: ข้อมูลดิบตั้งต้น 12 เดือนจากรูปภาพแรก (หากต้องการเปลี่ยน สามารถอัปโหลดไฟล์ Excel ของคุณทับได้เลย)")
+    
+    st.write("---")
+    st.write("📊 **ตารางตรวจสอบ/แก้ไขข้อมูลล่าสุด:**")
+    
+    # ตารางแก้ไขข้อมูลอัจฉริยะ (ดึงค่าจาก Excel หรือค่าตั้งต้นรูปภาพมาแสดง และให้กดแก้ไขหรือกดเพิ่มแถวเองได้ด้วย)
     edited_df = st.data_editor(
-        df_initial,
+        df_current,
         num_rows="dynamic",
         use_container_width=True,
         key="data_editor"
     )
 
-# กระบวนการคำนวณพยากรณ์
-edited_df = edited_df.dropna(subset=['เดือน', 'ยอดขายจริง'])
-historical_sales = edited_df['ยอดขายจริง'].astype(float).tolist()
-historical_months = edited_df['เดือน'].astype(str).tolist()
+# 5. กระบวนการประมวลผลคำนวณพยากรณ์ล่วงหน้า
+edited_df = edited_df.dropna(subset=['...']) if '...' in edited_df.columns else edited_df.dropna()
+# ตรวจสอบชื่อคอลัมน์เพื่อความยืดหยุ่นในการอ่านไฟล์
+col_month = edited_df.columns[0]
+col_sales = edited_df.columns[1]
 
+historical_sales = edited_df[col_sales].astype(float).tolist()
+historical_months = edited_df[col_month].astype(str).tolist()
+
+# พยากรณ์ล่วงหน้าด้วยวิธี Weighted Moving Average (WMA 3 เดือน)
 weights = np.array([0.2, 0.3, 0.5])
 forecast_values = []
 temp_sales = historical_sales.copy()
@@ -85,11 +93,11 @@ for i in range(forecast_horizon):
 
 forecast_df = pd.DataFrame({'เดือน': future_months, 'พยากรณ์ความต้องการ (Units)': forecast_values})
 
-# การแสดงผลกราฟในแท็บที่ 1
+# 6. แสดงผลลัพธ์กราฟและแดชบอร์ดในแท็บที่ 1
 with tab1:
-    st.markdown(f"### 🎯 สรุปสถานการณ์เดือนถัดไป ({future_months[0] if future_months else ''})")
-    col1, col2, col3 = st.columns(3)
     if forecast_values:
+        st.markdown(f"### 🎯 สรุปสถานการณ์เดือนถัดไป ({future_months[0]})")
+        col1, col2, col3 = st.columns(3)
         col1.metric("ยอดคำสั่งซื้อที่คาดการณ์", f"{forecast_values[0]:,} Units", "คำนวณจากข้อมูลล่าสุด")
         col2.metric("กำลังการผลิตปกติ", f"{capacity_limit:,} Units", "คงที่", delta_color="off")
 
@@ -102,6 +110,7 @@ with tab1:
     st.markdown("---")
     st.subheader("📈 แนวโน้มข้อมูลยอดขายจริงเปรียบเทียบกับผลพยากรณ์")
     
+    # รวมข้อมูลเพื่อพล็อตกราฟเส้นต่อเนื่อง
     ordered_months = historical_months + future_months
     chart_data = pd.DataFrame({
         'เดือน': ordered_months,
@@ -109,18 +118,21 @@ with tab1:
         'ยอดพยากรณ์': [None] * (len(historical_sales)-1) + [historical_sales[-1]] + forecast_values if len(historical_sales) > 0 else forecast_values, 
         'เส้น Capacity': capacity_limit
     })
+    
     if not chart_data.empty:
-        chart_data['เดือน'] = pd.Categorical(chart_data['เดือน'], categories=ordered_months, ordered=True)
+        chart_data['...'] = pd.Categorical(chart_data['เดือน'], categories=ordered_months, ordered=True)
         st.line_chart(chart_data.set_index('เดือน'), height=350)
 
     st.subheader("📋 ตารางตัวเลขพยากรณ์ล่วงหน้า")
     st.dataframe(forecast_df.T, use_container_width=True)
 
+# 7. แผนรับมือในแท็บที่ 3
 with tab3:
     over_capacity_months = forecast_df[forecast_df['พยากรณ์ความต้องการ (Units)'] > capacity_limit]
     if not over_capacity_months.empty:
         st.error("🚨 **ระบบตรวจพบช่วงเวลาที่มีแนวโน้มเกิดคอขวด (Over Capacity):**")
         for index, row in over_capacity_months.iterrows():
             st.write(f"- 🗓️ **{row['เดือน']}**: ความต้องการล้นระบบอยู่ **{row['พยากรณ์ความต้องการ (Units)'] - capacity_limit} Units**")
+        st.info("🔧 **ข้อเสนอแนะ:** ควรกักตุนสินค้าคงคลัง (Build Inventory) ไว้ล่วงหน้าตั้งแต่ช่วงเดือนที่ยอดขายยังไม่ล้นกำลังผลิต เพื่อนำมาส่งมอบในเดือนเหล่านี้โดยไม่ต้องจ่ายค่าล่วงเวลา (OT) ครับ")
     else:
-        st.success("✨ **เยี่ยมมาก!** กำลังการผลิตสอดคล้องกับความต้องการ ไม่พบปัญหาคอขวด")
+        st.success("✨ **เยี่ยมมาก!** ปริมาณการผลิตสอดคล้องกับความต้องการ ไม่พบปัญหาคอขวดในกรอบเวลาที่ประเมิน")
