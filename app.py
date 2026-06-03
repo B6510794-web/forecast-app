@@ -19,7 +19,7 @@ except FileNotFoundError:
 
 st.title("🏭 ระบบพยากรณ์และวางแผนการผลิต (Smart Factory Dashboard)")
 
-# 2. จัดระเบียบ Sidebar ให้สะอาดตา
+# 2. จัดระเบียบ Sidebar
 with st.sidebar:
     st.header("⚙️ แผงควบคุม (Control Panel)")
     capacity_limit = st.number_input("กำลังการผลิตสูงสุด (Units/เดือน)", min_value=100, value=450, step=10)
@@ -35,38 +35,36 @@ initial_data = {
 df_initial = pd.DataFrame(initial_data)
 
 # ---------------------------------------------------------
-# 🌟 4. ส่วนแท็บจัดการข้อมูลและประมวลผลพยากรณ์
+# 🌟 4. ส่วนแท็บจัดการข้อมูลและประมวลผลพยากรณ์ (สลับลำดับแท็บแล้ว)
 # ---------------------------------------------------------
 
-tab1, tab2, tab3 = st.tabs(["📝 จัดการข้อมูลยอดขายจริง", "📈 กราฟและตารางพยากรณ์", "💡 แผนรับมือ (Action Plan)"])
+# เปลี่ยนชื่อแท็บ 1 เป็นกราฟ และ แท็บ 2 เป็นตารางข้อมูล
+tab1, tab2, tab3 = st.tabs(["📈 กราฟและตารางพยากรณ์", "📝 จัดการข้อมูลยอดขายจริง", "💡 แผนรับมือ (Action Plan)"])
 
-with tab1:
+# ⚠️ เทคนิค: ต้องสั่งรันพื้นที่แท็บ 2 ก่อน เพื่อดึงข้อมูลที่ผู้ใช้พิมพ์ มาใช้คำนวณกราฟ
+with tab2:
     st.subheader("✏️ ตารางบันทึกยอดขายจริง (เพิ่มหรือแก้ไขข้อมูลได้ที่นี่)")
     st.markdown("💡 **วิธีใช้งาน:** \n"
                 "1. สามารถดับเบิลคลิกที่ช่องตัวเลขเพื่อแก้ไขข้อมูลได้ทันที\n"
-                "2. หากต้องการเพิ่มข้อมูลเดือนถัดไป (เช่น ม.ค. 68) ให้เลื่อนเมาส์ไปที่ด้านล่างสุดของตาราง แล้วกดปุ่ม **(➕ Add row)** จากนั้นพิมพ์ชื่อเดือนและยอดขายจริงลงไปได้เลยครับ")
+                "2. หากต้องการเพิ่มข้อมูลเดือนถัดไป ให้เลื่อนเมาส์ไปที่ด้านล่างสุดของตาราง แล้วกดปุ่ม **(➕ Add row)** จากนั้นพิมพ์ชื่อเดือนและยอดขายจริงลงไปได้เลยครับ")
     
-    # เปลี่ยนจากตารางธรรมดาเป็น st.data_editor เพื่อให้ผู้ใช้พิมพ์เพิ่มข้อมูลได้เองหน้าเว็บ
     edited_df = st.data_editor(
         df_initial,
-        num_rows="dynamic", # เปิดโหมดให้เพิ่มและลบแถวข้อมูลได้อิสระ
+        num_rows="dynamic",
         use_container_width=True,
         key="data_editor"
     )
 
-# 5. ดึงข้อมูลล่าสุดจากตารางที่ผู้ใช้กรอกมาประมวลผลคำนวณพยากรณ์
-# ป้องกันกรณีผู้ใช้กดเพิ่มแถวแต่ยังไม่ได้พิมพ์ข้อมูล (ลบค่าว่างออก)
+# 5. ประมวลผลและคำนวณ (รับข้อมูลมาจาก tab2)
 edited_df = edited_df.dropna(subset=['เดือน', 'ยอดขายจริง'])
 
 historical_sales = edited_df['ยอดขายจริง'].astype(float).tolist()
 historical_months = edited_df['เดือน'].tolist()
 
-# คำนวณพยากรณ์ด้วย Weighted Moving Average (WMA 3 เดือน)
 weights = np.array([0.2, 0.3, 0.5])
 forecast_values = []
 temp_sales = historical_sales.copy()
 
-# สร้างชื่อเดือนอนาคตโดยอ้างอิงจากเดือนล่าสุดในตารางโดยอัตโนมัติ
 last_month_name = historical_months[-1] if len(historical_months) > 0 else "ปัจจุบัน"
 future_months = [f"พยากรณ์ (+{i+1}) หลัง {last_month_name}" for i in range(forecast_horizon)]
 
@@ -74,23 +72,22 @@ for i in range(forecast_horizon):
     if len(temp_sales) >= 3:
         next_forecast = np.dot(temp_sales[-3:], weights)
     else:
-        # หากข้อมูลในตารางเหลือน้อยกว่า 3 เดือน ให้ใช้ค่าเฉลี่ยแทนชั่วคราวป้องกันแอปพัง
         next_forecast = np.mean(temp_sales) if len(temp_sales) > 0 else 0
     
     forecast_values.append(int(round(next_forecast, 0)))
     temp_sales.append(next_forecast)
 
-#สร้างตารางรวมข้อมูลอนาคต
 forecast_df = pd.DataFrame({
     'เดือน': future_months,
     'พยากรณ์ความต้องการ (Units)': forecast_values
 })
 
 # ---------------------------------------------------------
-# 6. แสดงผลลัพธ์ในแท็บต่างๆ
+# 6. แสดงผลลัพธ์ในแท็บ 1 (Dashboard) และ แท็บ 3
 # ---------------------------------------------------------
 
-with tab2:
+# นำกราฟและตัวเลขสรุปมาแสดงใน tab1 (ผู้ใช้จะเห็นหน้านี้เป็นหน้าแรก)
+with tab1:
     st.markdown(f"### 🎯 สรุปสถานการณ์เดือนถัดไป ({future_months[0]})")
     col1, col2, col3 = st.columns(3)
     col1.metric("ยอดคำสั่งซื้อที่คาดการณ์", f"{forecast_values[0]:,} Units", "คำนวณจากข้อมูลล่าสุด")
@@ -105,7 +102,6 @@ with tab2:
     st.markdown("---")
     st.subheader("📈 แนวโน้มข้อมูลยอดขายจริงเปรียบเทียบกับผลพยากรณ์")
     
-    # รวมข้อมูลอดีตและอนาคตเข้าด้วยกันเพื่อวาดกราฟเส้นเดี่ยวต่อเนื่อง
     ordered_months = historical_months + future_months
     chart_data = pd.DataFrame({
         'เดือน': ordered_months,
