@@ -39,11 +39,9 @@ df_current = pd.DataFrame(default_data)
 # ---------------------------------------------------------
 tab1, tab2, tab3 = st.tabs(["📈 กราฟและตารางพยากรณ์", "📂 นำเข้าข้อมูล (Excel)", "💡 แผนรับมือ (Action Plan)"])
 
-# ⚠️ สั่งรันแท็บข้อมูลก่อนเพื่อให้หน้ากราฟนำค่าไปคำนวณได้ทันที
 with tab2:
     st.subheader("📥 นำเข้าข้อมูลยอดขายจาก Excel")
     
-    # ช่องอัปโหลดไฟล์ Excel
     uploaded_file = st.file_uploader("ลากไฟล์ Excel (.xlsx) มาวางที่นี่ หรือคลิกเพื่อค้นหา", type=['xlsx', 'xls'])
     
     if uploaded_file is not None:
@@ -58,7 +56,6 @@ with tab2:
     st.write("---")
     st.write("📊 **ตารางตรวจสอบ/แก้ไขข้อมูลล่าสุด:**")
     
-    # ตารางแก้ไขข้อมูลอัจฉริยะ (ดึงค่าจาก Excel หรือค่าตั้งต้นรูปภาพมาแสดง และให้กดแก้ไขหรือกดเพิ่มแถวเองได้ด้วย)
     edited_df = st.data_editor(
         df_current,
         num_rows="dynamic",
@@ -67,15 +64,13 @@ with tab2:
     )
 
 # 5. กระบวนการประมวลผลคำนวณพยากรณ์ล่วงหน้า
-edited_df = edited_df.dropna(subset=['...']) if '...' in edited_df.columns else edited_df.dropna()
-# ตรวจสอบชื่อคอลัมน์เพื่อความยืดหยุ่นในการอ่านไฟล์
+edited_df = edited_df.dropna()
 col_month = edited_df.columns[0]
 col_sales = edited_df.columns[1]
 
 historical_sales = edited_df[col_sales].astype(float).tolist()
 historical_months = edited_df[col_month].astype(str).tolist()
 
-# พยากรณ์ล่วงหน้าด้วยวิธี Weighted Moving Average (WMA 3 เดือน)
 weights = np.array([0.2, 0.3, 0.5])
 forecast_values = []
 temp_sales = historical_sales.copy()
@@ -110,7 +105,6 @@ with tab1:
     st.markdown("---")
     st.subheader("📈 แนวโน้มข้อมูลยอดขายจริงเปรียบเทียบกับผลพยากรณ์")
     
-    # รวมข้อมูลเพื่อพล็อตกราฟเส้นต่อเนื่อง
     ordered_months = historical_months + future_months
     chart_data = pd.DataFrame({
         'เดือน': ordered_months,
@@ -120,7 +114,8 @@ with tab1:
     })
     
     if not chart_data.empty:
-        chart_data['...'] = pd.Categorical(chart_data['เดือน'], categories=ordered_months, ordered=True)
+        # 🌟 แก้ไขจุดนี้ให้เป็น 'เดือน' เรียบร้อยแล้ว กราฟจะเรียงถูกและเส้นประหลาดจะหายไป
+        chart_data['เดือน'] = pd.Categorical(chart_data['เดือน'], categories=ordered_months, ordered=True)
         st.line_chart(chart_data.set_index('เดือน'), height=350)
 
     st.subheader("📋 ตารางตัวเลขพยากรณ์ล่วงหน้า")
