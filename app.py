@@ -2,9 +2,16 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-# 1. ตั้งค่าหน้าเว็บให้กว้างเต็มจอ
-st.set_page_config(page_title="Smart Factory Forecast", page_icon="🏭", layout="wide")
+# 1. ตั้งค่าหน้าเว็บ (เปลี่ยนหน้าแท็บเบราว์เซอร์เป็นรูปโลโก้ที่คุณเพิ่งเซฟ)
+# และแก้ชื่อแอปตรง page_title ให้ดูดีขึ้น
+st.set_page_config(page_title="B6510794 Smart Forecast", page_icon="logo.png", layout="wide")
+
+# แสดงโลโก้มุมซ้ายบนของหน้าต่างเว็บ
+st.logo("logo.png")
+
 st.title("🏭 ระบบพยากรณ์และวางแผนการผลิต (Smart Factory Dashboard)")
+
+# ... (โค้ดส่วนอื่นๆ ตามเดิมไม่ต้องแก้) ...
 
 # 2. จัดระเบียบ Sidebar ให้สะอาดตา
 with st.sidebar:
