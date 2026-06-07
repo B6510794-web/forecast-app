@@ -106,6 +106,7 @@ for i in range(forecast_horizon):
     temp_sales.append(next_forecast)
 
 forecast_df = pd.DataFrame({'เดือน': future_months, 'พยากรณ์ความต้องการ (Units)': forecast_values})
+forecast_df.index = forecast_df.index + 1  # สั่งให้ตัวเลขหัวตารางเริ่มรันที่เลข 1
 
 # 6. แสดงผลลัพธ์กราฟและแดชบอร์ดในแท็บที่ 1
 with tab1:
