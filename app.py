@@ -138,7 +138,7 @@ with tab1:
         st.line_chart(chart_data.set_index('เดือน'), height=350)
 
     st.subheader("📋 ตารางตัวเลขพยากรณ์ล่วงหน้า")
-   st.table(forecast_df.T)
+   st.dataframe(forecast_df.T, use_container_width=True)
 
 # 7. แผนรับมือในแท็บที่ 3
 with tab3:
