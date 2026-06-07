@@ -23,17 +23,17 @@ st.markdown("""
     <style>
     /* 1. ขยายขนาดตัวหนังสือทั่วไป (พวก st.write, st.markdown) */
     p {
-        font-size: 50px !important;
+        font-size: 30px !important;
     }
     
     /* 2. ขยายขนาดตัวเลขผลลัพธ์ในกล่อง Metric (เช่น 500 Units) */
     [data-testid="stMetricValue"] {
-        font-size: 70px !important;
+        font-size: 60px !important;
     }
     
     /* 3. ขยายขนาดหัวข้อในกล่อง Metric (เช่น ยอดคำสั่งซื้อที่คาดการณ์) */
     [data-testid="stMetricLabel"] p {
-        font-size: 50px !important;
+        font-size: 30px !important;
     }
     </style>
 """, unsafe_allow_html=True)
