@@ -137,9 +137,8 @@ with tab1:
         chart_data['เดือน'] = pd.Categorical(chart_data['เดือน'], categories=ordered_months, ordered=True)
         st.line_chart(chart_data.set_index('เดือน'), height=350)
 
-    st.subheader("📋 ตารางตัวเลขพยากรณ์ล่วงหน้า")
-   st.dataframe(forecast_df.T, use_container_width=True)
-
+   st.subheader("📋 ตารางตัวเลขพยากรณ์ล่วงหน้า")
+    st.table(forecast_df.T)
 # 7. แผนรับมือในแท็บที่ 3
 with tab3:
     over_capacity_months = forecast_df[forecast_df['พยากรณ์ความต้องการ (Units)'] > capacity_limit]
