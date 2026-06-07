@@ -137,7 +137,7 @@ with tab1:
         chart_data['เดือน'] = pd.Categorical(chart_data['เดือน'], categories=ordered_months, ordered=True)
         st.line_chart(chart_data.set_index('เดือน'), height=350)
 
-   st.subheader("📋 ตารางตัวเลขพยากรณ์ล่วงหน้า")
+    st.subheader("📋 ตารางตัวเลขพยากรณ์ล่วงหน้า")
     st.table(forecast_df.T)
 # 7. แผนรับมือในแท็บที่ 3
 with tab3:
