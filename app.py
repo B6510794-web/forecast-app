@@ -211,6 +211,66 @@ with tab3:
             st.success(
                 f"✅ **ผลวิเคราะห์ (VC < 0.20):** ความต้องการมีความผันผวนต่ำ-ปานกลาง\n\n"
                 f"**คำแนะนำ:** มีความเหมาะสมอย่างยิ่งที่จะนำ **กลยุทธ์การปรับเรียบกำลังการผลิต (Level Strategy)** หรือโมเดล **EOQ** มาใช้ โดยโรงงานควรเดินเครื่องผลิตคงที่เฉลี่ยเดือนละ **{int(mean_demand)} Units** เพื่อลดปัญหาสินค้าขาดมือในช่วง Peak Season ครับ"
+                # ---------------------------------------------------------
+    # 🌟 ฟีเจอร์ใหม่ 2 & 3: ระบบจำลองสต๊อก และ แนะนำกลยุทธ์ผสม
+    # ---------------------------------------------------------
+    st.markdown("---")
+    st.subheader("📦 จำลองสถานการณ์สินค้าคงคลังล่วงหน้า (Inventory Simulation)")
+    
+    if len(forecast_values) > 0:
+        # กำหนดเป้าหมายการผลิตแบบปรับเรียบ (ใช้ค่าเฉลี่ยความต้องการ)
+        planned_production = int(np.mean(forecast_values))
+        
+        sim_data = []
+        cumulative_inv = 0
+        overflow_flag = False
+        backorder_flag = False
+        
+        # วนลูปจำลองสต๊อกรายเดือน
+        for i in range(len(forecast_values)):
+            demand = forecast_values[i]
+            month = future_months[i]
+            
+            # คำนวณสต๊อกสะสม = ของเดิม + ของใหม่ที่ผลิต - ของที่ขายออก
+            cumulative_inv = cumulative_inv + planned_production - demand
+            
+            # ตรวจสอบสถานะโกดัง
+            if cumulative_inv > max_inventory:
+                status = "🔴 คลังล้น (Overflow)"
+                overflow_flag = True
+            elif cumulative_inv < 0:
+                status = "🟡 ของขาด (Backorder)"
+                backorder_flag = True
+            else:
+                status = "🟢 ปกติ"
+                
+            sim_data.append({
+                "เดือน": month,
+                "พยากรณ์ความต้องการ": demand,
+                "เป้าหมายผลิต (ปรับเรียบ)": planned_production,
+                "สต๊อกสะสม (Units)": cumulative_inv,
+                "สถานะคลัง": status
+            })
+            
+        sim_df = pd.DataFrame(sim_data)
+        
+        # 🌟 ฟีเจอร์ 2: แสดงตารางจำลอง
+        st.dataframe(sim_df, use_container_width=True)
+        
+        # 🌟 ฟีเจอร์ 3: ระบบแนะนำกลยุทธ์ผสม (Hybrid Strategy Recommendation)
+        st.subheader("🎯 สรุปผลและคำแนะนำเชิงกลยุทธ์ (Hybrid Strategy)")
+        
+        if overflow_flag or backorder_flag:
+            st.error(f"🚨 **ระบบตรวจพบข้อจำกัด:** การใช้กลยุทธ์ปรับเรียบที่ {planned_production} ชิ้น/เดือน จะทำให้เกิดปัญหา 'คลังสินค้าล้นความจุ ({max_inventory} ชิ้น)' หรือ 'สินค้าขาดมือ'")
+            
+            st.info(
+                f"💡 **ข้อเสนอแนะ: ควรเปลี่ยนไปใช้กลยุทธ์แบบผสม (Hybrid Strategy)**\n\n"
+                f"1. **ปรับฐานการผลิต (Base Production):** ลดการผลิตในช่วงที่มีอัตราความต้องการต่ำ เพื่อรักษาระดับสต๊อกสะสมไม่ให้ทะลุ {max_inventory} ชิ้น เพื่อประหยัดค่า Holding Cost ({holding_cost} บาท/ชิ้น)\n"
+                f"2. **ใช้กำลังผลิตล่วงเวลา (Overtime):** ในช่วง Peak Season (เช่น ปลายปี) ให้พิจารณาจ้างพนักงานทำ OT ซึ่งมีต้นทุนที่ {ot_cost} บาท/ชิ้น ทดแทนการผลิตตุนที่เสี่ยงต่อปัญหาคลังสินค้าแตก\n"
+                f"3. **จ้างผลิตภายนอก (Subcontract):** หากค่า OT เริ่มสูงกว่าการจัดหาจากภายนอก ควรพิจารณาเจรจากับซัพพลายเออร์เพื่อรองรับยอดขายส่วนเกิน"
+            )
+        else:
+            st.success(f"✨ **เยี่ยมมาก!** กลยุทธ์การปรับเรียบที่เป้าหมาย {planned_production} ชิ้น/เดือน สามารถทำงานได้สมบูรณ์แบบโดยไม่ทำให้คลังสินค้าล้นความจุ {max_inventory} ชิ้น")
             )
         else:
             st.warning(
