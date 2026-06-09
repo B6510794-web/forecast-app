@@ -92,17 +92,25 @@ if "WMA" in selected_model:
         temp_sales.append(next_forecast)
         
 else:
-    # --- สูตรที่ 2: Linear Regression (ระยะยาว) ---
-    if len(historical_sales) >= 2:
+    # --- สูตรที่ 2: Polynomial Regression (เส้นโค้ง จับเทรนด์ระยะยาว) ---
+    if len(historical_sales) >= 3: # ควรมีข้อมูลอย่างน้อย 3 เดือนสำหรับเส้นโค้ง
         x = np.arange(len(historical_sales))
         y = np.array(historical_sales)
+        
+        # ใช้ degree=2 เพื่อสร้างสมการเส้นโค้ง (พาราโบลา)
         coefficients = np.polyfit(x, y, 2) 
-        m = coefficients[0]
-        c = coefficients[1]
+        
+        # รับค่า 3 ตัวแปร (a, b, c)
+        a = coefficients[0]
+        b = coefficients[1]
+        c = coefficients[2]
         
         for i in range(forecast_horizon):
             next_x = len(historical_sales) + i
-            next_forecast = (m * next_x) + c
+            
+            # 🌟 แก้สมการใหม่ให้เป็น y = ax^2 + bx + c
+            next_forecast = (a * (next_x ** 2)) + (b * next_x) + c
+            
             forecast_values.append(max(0, int(round(next_forecast, 0))))
     else:
         avg_val = np.mean(historical_sales) if len(historical_sales) > 0 else 0
