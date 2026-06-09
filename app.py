@@ -93,26 +93,28 @@ if "WMA" in selected_model:
         temp_sales.append(next_forecast)
 
 elif "Seasonal" in selected_model:
-    # --- สูตรที่ 3: Seasonal + Trend (จับเทรนด์และฤดูกาล) ---
+    # --- สูตรที่ 3: Seasonal + Linear Trend (จับเทรนด์และฤดูกาล) ---
     if len(historical_sales) >= 12: # ต้องมีข้อมูลอย่างน้อย 1 ปีเพื่อหาฤดูกาล
         # 1. หาค่าเฉลี่ยยอดขายรวมของปีที่แล้ว
         avg_sales = np.mean(historical_sales)
         
-        # 2. สร้างดัชนีฤดูกาล (Seasonal Index) ของทั้ง 12 เดือน (ยอดเดือนนั้น / ค่าเฉลี่ยรวม)
+        # 2. สร้างดัชนีฤดูกาล (Seasonal Index)
         seasonal_indices = [sale / avg_sales for sale in historical_sales]
         
-        # 3. สร้างเส้นโค้งเทรนด์หลัก (Polynomial)
+        # 3. 🌟 สร้างแกนหลักด้วย "เส้นตรง" (เปลี่ยนจาก 2 เป็น 1 เพื่อไม่ให้กราฟพุ่งแรงเกินไป)
         x = np.arange(len(historical_sales))
         y = np.array(historical_sales)
-        coefficients = np.polyfit(x, y, 2) 
-        a, b, c = coefficients
+        coefficients = np.polyfit(x, y, 1) 
+        m = coefficients[0]
+        c = coefficients[1]
         
         for i in range(forecast_horizon):
             next_x = len(historical_sales) + i
-            # คำนวณยอดขายบนเส้นแกนหลัก
-            base_trend = (a * (next_x ** 2)) + (b * next_x) + c
             
-            # 4. เอาแกนหลัก ไปคูณกับดัชนีฤดูกาลของเดือนนั้นๆ (ใช้ %12 เพื่อวนลูปเดือน ม.ค.-ธ.ค.)
+            # คำนวณยอดขายบนเส้นแกนหลัก (สมการเส้นตรงธรรมดา)
+            base_trend = (m * next_x) + c
+            
+            # 4. เอาแกนหลัก ไปคูณกับดัชนีฤดูกาล
             month_index = (len(historical_sales) + i) % 12
             next_forecast = base_trend * seasonal_indices[month_index]
             
