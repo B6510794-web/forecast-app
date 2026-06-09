@@ -263,8 +263,7 @@ with tab3:
         
         # 🌟 ฟีเจอร์ 2: แสดงตารางจำลอง
         st.dataframe(sim_df, use_container_width=True)
-        
-        # 🌟 ฟีเจอร์ 3: ระบบแนะนำกลยุทธ์ผสม (Hybrid Strategy Recommendation)
+      # 🌟 ฟีเจอร์ 3: ระบบแนะนำกลยุทธ์ผสม (Hybrid Strategy Recommendation)
         st.subheader("🎯 สรุปผลและคำแนะนำเชิงกลยุทธ์ (Hybrid Strategy)")
         
         if overflow_flag or backorder_flag:
@@ -277,7 +276,7 @@ with tab3:
                 f"3. **จ้างผลิตภายนอก (Subcontract):** หากค่า OT เริ่มสูงกว่าการจัดหาจากภายนอก ควรพิจารณาเจรจากับซัพพลายเออร์เพื่อรองรับยอดขายส่วนเกิน"
             )
         else:
-            st.success(f"✨ **เยี่ยมมาก!** กลยุทธ์การปรับเรียบ...")
+            st.success(f"✨ **เยี่ยมมาก!** กลยุทธ์การปรับเรียบที่เป้าหมาย {planned_production} ชิ้น/เดือน สามารถทำงานได้สมบูรณ์แบบโดยไม่ทำให้คลังสินค้าล้นความจุ {max_inventory} ชิ้น")
         else:
             st.warning(
                 f"⚠️ **ผลวิเคราะห์ (VC > 0.20):** ความต้องการมีความผันผวนและความไม่แน่นอนสูงมาก\n\n"
