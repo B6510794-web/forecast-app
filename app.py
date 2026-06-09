@@ -96,7 +96,7 @@ else:
     if len(historical_sales) >= 2:
         x = np.arange(len(historical_sales))
         y = np.array(historical_sales)
-        coefficients = np.polyfit(x, y, 1) 
+        coefficients = np.polyfit(x, y, 2) 
         m = coefficients[0]
         c = coefficients[1]
         
