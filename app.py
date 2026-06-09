@@ -31,7 +31,8 @@ with st.sidebar:
         "กรุณาเลือกวิธีการคำนวณ:",
         [
             "📊 WMA 3 เดือน (แม่นยำสำหรับระยะสั้น 1-3 เดือน)", 
-            "📈 Linear Regression (จับเทรนด์ระยะยาว 4-12 เดือน)"
+            "📈 Linear Regression (จับเทรนด์ระยะยาว 4-12 เดือน)",
+            "🌊 Seasonal Trend (จับเทรนด์ + ฤดูกาลรายไตรมาส)"
         ]
     )
     
@@ -90,27 +91,48 @@ if "WMA" in selected_model:
             next_forecast = np.mean(temp_sales) if len(temp_sales) > 0 else 0
         forecast_values.append(int(round(next_forecast, 0)))
         temp_sales.append(next_forecast)
+
+elif "Seasonal" in selected_model:
+    # --- สูตรที่ 3: Seasonal + Trend (จับเทรนด์และฤดูกาล) ---
+    if len(historical_sales) >= 12: # ต้องมีข้อมูลอย่างน้อย 1 ปีเพื่อหาฤดูกาล
+        # 1. หาค่าเฉลี่ยยอดขายรวมของปีที่แล้ว
+        avg_sales = np.mean(historical_sales)
         
-else:
-    # --- สูตรที่ 2: Polynomial Regression (เส้นโค้ง จับเทรนด์ระยะยาว) ---
-    if len(historical_sales) >= 3: # ควรมีข้อมูลอย่างน้อย 3 เดือนสำหรับเส้นโค้ง
+        # 2. สร้างดัชนีฤดูกาล (Seasonal Index) ของทั้ง 12 เดือน (ยอดเดือนนั้น / ค่าเฉลี่ยรวม)
+        seasonal_indices = [sale / avg_sales for sale in historical_sales]
+        
+        # 3. สร้างเส้นโค้งเทรนด์หลัก (Polynomial)
         x = np.arange(len(historical_sales))
         y = np.array(historical_sales)
-        
-        # ใช้ degree=2 เพื่อสร้างสมการเส้นโค้ง (พาราโบลา)
         coefficients = np.polyfit(x, y, 2) 
-        
-        # รับค่า 3 ตัวแปร (a, b, c)
-        a = coefficients[0]
-        b = coefficients[1]
-        c = coefficients[2]
+        a, b, c = coefficients
         
         for i in range(forecast_horizon):
             next_x = len(historical_sales) + i
+            # คำนวณยอดขายบนเส้นแกนหลัก
+            base_trend = (a * (next_x ** 2)) + (b * next_x) + c
             
-            # 🌟 แก้สมการใหม่ให้เป็น y = ax^2 + bx + c
+            # 4. เอาแกนหลัก ไปคูณกับดัชนีฤดูกาลของเดือนนั้นๆ (ใช้ %12 เพื่อวนลูปเดือน ม.ค.-ธ.ค.)
+            month_index = (len(historical_sales) + i) % 12
+            next_forecast = base_trend * seasonal_indices[month_index]
+            
+            forecast_values.append(max(0, int(round(next_forecast, 0))))
+    else:
+        st.warning("⚠️ การพยากรณ์แบบ Seasonal ต้องใช้ข้อมูลย้อนหลังอย่างน้อย 12 เดือน")
+        avg_val = np.mean(historical_sales) if len(historical_sales) > 0 else 0
+        forecast_values = [int(round(avg_val, 0))] * forecast_horizon
+        
+else:
+    # --- สูตรที่ 2: Polynomial Regression (เส้นโค้ง จับเทรนด์อย่างเดียว) ---
+    if len(historical_sales) >= 3:
+        x = np.arange(len(historical_sales))
+        y = np.array(historical_sales)
+        coefficients = np.polyfit(x, y, 2) 
+        a, b, c = coefficients
+        
+        for i in range(forecast_horizon):
+            next_x = len(historical_sales) + i
             next_forecast = (a * (next_x ** 2)) + (b * next_x) + c
-            
             forecast_values.append(max(0, int(round(next_forecast, 0))))
     else:
         avg_val = np.mean(historical_sales) if len(historical_sales) > 0 else 0
